@@ -198,7 +198,7 @@ def declare_rustc_toolchains(
             exec_triple = triple,
             target_triple = select(target_triple_select),
             visibility = ["//visibility:public"],
-            tags = ["rust_version=" + version],
+            tags = ["manual", "rust_version=" + version],
         )
 
         rust_toolchain(
