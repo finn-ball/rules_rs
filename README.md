@@ -171,6 +171,19 @@ upstream instructions with `@rules_rs//tools/rust_analyzer:setup`.
 ## Advanced Options
 
 <details>
+<summary>Use the host macOS SDK</summary>
+
+`rules_rs` uses a hermetic macOS SDK by default. Add this setting to
+`.bazelrc` when the build must use the macOS SDK selected by Xcode or the
+C/C++ toolchain instead:
+
+```bazelrc
+common --@rules_rust//rust/settings:use_hermetic_macos_sdkroot=false
+```
+
+</details>
+
+<details>
 <summary>Register a custom Rust compiler</summary>
 
 `declare_rustc_toolchains` accepts a custom compiler and reuses the generated
