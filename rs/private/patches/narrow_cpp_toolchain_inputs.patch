@@ -1,0 +1,51 @@
+From: foo
+Subject: [PATCH] Narrow C++ toolchain inputs for Rust compilation
+
+Rust compilation currently inherits the complete C++ toolchain file set even
+though Rust actions already declare their linker inputs separately. That pulls
+compiler headers and unrelated SDK libraries into every Rust action. Keep the
+Rust toolchain closure limited to the Rust sysroot, and declare linker files
+and C++ runtime libraries only for actions that actually perform linking.
+---
+ rust/private/rustc.bzl     | 5 +++--
+ rust/private/toolchain.bzl | 4 +---
+ 2 files changed, 4 insertions(+), 5 deletions(-)
+
+diff --git rust/private/rustc.bzl rust/private/rustc.bzl
+--- rust/private/rustc.bzl
++++ rust/private/rustc.bzl
+@@ -774,9 +774,10 @@ def collect_inputs(
+     # Pass linker inputs only for linking-like actions, not for example where
+     # the output is rlib. This avoids quadratic behavior where transitive noncrates are
+     # flattened on each transitive rust_library dependency.
++    is_linking_action = crate_info.type not in ("lib", "rlib") or force_link_inputs
+     libs_from_linker_inputs = []
+     ambiguous_libs = {}
+-    if crate_info.type not in ("lib", "rlib") or force_link_inputs:
++    if is_linking_action:
+         linker_inputs = dep_info.transitive_noncrates.to_list()
+         ambiguous_libs = _disambiguate_libs(ctx.actions, toolchain, crate_info, dep_info, use_pic)
+         libs_from_linker_inputs = _collect_libs_from_linker_inputs(linker_inputs, use_pic) + [
+@@ -833,7 +835,7 @@ def collect_inputs(
+             crate_info.compile_data,
+             dep_info.transitive_proc_macro_data,
+             toolchain.all_files,
+-        ] + ([] if experimental_use_cc_common_link else [
++        ] + ([] if experimental_use_cc_common_link or not is_linking_action else [
+             runtime_libs,
+             linker_depset,
+         ]),
+diff --git rust/private/toolchain.bzl rust/private/toolchain.bzl
+--- rust/private/toolchain.bzl
++++ rust/private/toolchain.bzl
+@@ -611,9 +611,7 @@ def _rust_toolchain_impl(ctx):
+             std,
+         )
+
+-    # Include C++ toolchain files to ensure tools like 'ar' are available for cross-compilation
++    # C++ toolchain inputs are attached to the Rust actions that use them.
+     all_files_depsets = [sysroot.all_files]
+-    if cc_toolchain and cc_toolchain.all_files:
+-        all_files_depsets.append(cc_toolchain.all_files)
+
+     # Parse the version string once so downstream rules can branch on the

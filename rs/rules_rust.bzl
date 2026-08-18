@@ -34,7 +34,7 @@ def _rules_rust_impl(mctx):
         integrity = "sha256-PtReWZBLFCqvQiaBAQIzUAXd5ImdamuIlOXiGPUJbxo=",
         strip_prefix = "rules_rust-93b72650b121012105dc7e04b0ec078bfa8d9adc",
         url = "https://github.com/hermeticbuild/rules_rust/releases/download/source-93b72650b121012105dc7e04b0ec078bfa8d9adc/rules_rust-93b72650b121012105dc7e04b0ec078bfa8d9adc.tar.gz",
-        patches = patches,
+        patches = [Label("//rs/private/patches:narrow_cpp_toolchain_inputs.patch")] + patches,
         patch_strip = strip,
     )
 
